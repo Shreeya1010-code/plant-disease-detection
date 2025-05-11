@@ -1,76 +1,43 @@
-from google.colab import files
-import os
-import numpy as np
-from sklearn.metrics import classification_report, accuracy_score, f1_score
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras import layers, models
-from tensorflow.keras.utils import load_img, img_to_array
+plant-disease-detection
+Plant Disease Classification using CNN and Transfer Learning
 
-files.upload()
-os.makedirs('/root/.kaggle', exist_ok=True)
-!mv kaggle.json /root/.kaggle/
-!chmod 600 /root/.kaggle/kaggle.json
+Objectives:
 
-!pip install -q kaggle
-!kaggle datasets download -d akshitgupta146/plant-disease-dataset-classification
-!unzip -q -o plant-disease-dataset-classification.zip -d plant_disease_dataset
+1.Classify plant leaf images into specific disease categories
+2.Use real-world image dataset for training (Potato: Early Blight, Late Blight, Healthy)
+3.Build a lightweight CNN model using MobileNetV2
+4.Evaluate performance using Accuracy and F1 Score
+5.Predict disease from user-uploaded leaf images
+6.Enable easy testing and future deployment
 
-base_path = 'plant_disease_dataset/PlantVillage'
+Features:
+1.Deep learning classification with Keras/TensorFlow
+2.Pretrained MobileNetV2 base model
+3.Data augmentation for improved generalization
+4.Image upload + prediction in real-time
+5.Evaluation metrics: Accuracy, F1 score, classification report
+6.Simple, Colab-compatible workflow
 
-datagen = ImageDataGenerator(rescale=1./255, validation_split=0.2)
+Programming Language & Tools:
+Language: Python
 
-train_generator = datagen.flow_from_directory(
-    base_path,
-    target_size=(224, 224),
-    batch_size=32,
-    class_mode='categorical',
-    subset='training'
-)
+Libraries: TensorFlow, Keras, NumPy, sklearn, Matplotlib, PIL
 
-validation_generator = datagen.flow_from_directory(
-    base_path,
-    target_size=(224, 224),
-    batch_size=32,
-    class_mode='categorical',
-    subset='validation'
-)
+Dataset: Plant Disease Dataset - Akshit Gupta (Kaggle)
 
-model = models.Sequential([
-    layers.Conv2D(32, (3, 3), activation='relu', input_shape=(224, 224, 3)),
-    layers.MaxPooling2D(2, 2),
-    layers.Conv2D(64, (3, 3), activation='relu'),
-    layers.MaxPooling2D(2, 2),
-    layers.Flatten(),
-    layers.Dense(64, activation='relu'),
-    layers.Dense(train_generator.num_classes, activation='softmax')
-])
+Evaluation:
+Accuracy: ~42%
 
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-model.fit(train_generator, epochs=5, validation_data=validation_generator)
+F1 Score (macro): ~32%
 
-validation_generator.reset()
-y_pred_probs = model.predict(validation_generator, verbose=1)
-y_pred = np.argmax(y_pred_probs, axis=1)
-y_true = validation_generator.classes
-class_names = list(validation_generator.class_indices.keys())
+Predicted correctly: Potato___Early_blight from uploaded leaf image
 
-acc = accuracy_score(y_true, y_pred)
-f1 = f1_score(y_true, y_pred, average='macro')
+Works best on disease classes with balanced data
 
-print(f"\nAccuracy: {acc:.4f}")
-print(f"F1 Score (macro): {f1:.4f}")
-print("\nClassification Report:")
-print(classification_report(y_true, y_pred, target_names=class_names))
+Future Project Perspective:
+1.Advanced CNN: Use ResNet, EfficientNet for better performance
+2.Mobile App: Capture & classify disease using camera (Android/iOS)
+3.Offline Mode: Make predictions without internet using TFLite
+4.Dashboard: Visual analytics for farmers & agri-scientists
+5.Multicrop Extension: Support more crops (tomato, maize, etc.)
 
-uploaded = files.upload()
-img_path = list(uploaded.keys())[0]
-
-img = load_img(img_path, target_size=(224, 224))
-img_array = img_to_array(img) / 255.0
-img_array = np.expand_dims(img_array, axis=0)
-
-predictions = model.predict(img_array)
-predicted_class_index = np.argmax(predictions, axis=1)[0]
-predicted_label = class_names[predicted_class_index]
-
-print(f"\nPredicted Disease: {predicted_label}")
